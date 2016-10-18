@@ -1,0 +1,6 @@
+ubuntu/xenial/amd64
+apt-get update
+apt-get -y install python-pip
+pip install requests
+apt-get -y install git
+
