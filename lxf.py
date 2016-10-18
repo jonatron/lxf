@@ -34,6 +34,8 @@ def create_container(name):
     cont = lxd.containers.create(config, wait=True)
     cont.start()
     for i in range(10):
+        if i == 9:
+            raise Exception("Failed to create container")
         try:
             cont.state().network['eth0']['addresses'][0]['address']
         except TypeError:
