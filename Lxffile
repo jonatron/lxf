@@ -1,0 +1,5 @@
+ubuntu/xenial/amd64
+apt-get update
+/bin/bash -c "echo \"a1\" > a2"
+ADD fakesource /moo/
+/bin/bash -c "echo \"b3\" > b4"
