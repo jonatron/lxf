@@ -2,6 +2,7 @@
 
 import hashlib
 import shlex
+import socket
 import subprocess
 import sys
 import time
@@ -54,17 +55,36 @@ def create_container(name, snapshot_name=None):
     print("config:", config)
     cntr = lxd.containers.create(config, wait=True)
     cntr.start()
+    address = None
     for i in range(10):
         if i == 9:
             raise Exception("Failed to create container")
         try:
-            cntr.state().network['eth0']['addresses'][0]['address']
+            print("Waiting for container to boot")
+            for address_details in cntr.state().network['eth0']['addresses']:
+                if address_details['family'] == 'inet':
+                    address = address_details['address']
         except TypeError:
             print("Waiting for container to boot")
+        if not address:
             time.sleep(1)
-            continue
-        break
-    time.sleep(5)  # still needs some extra time
+        else:
+            break
+    for i in range(10):
+        if i == 9:
+            raise Exception("Failed contact container")
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            print("Trying to contact container")
+            s.connect((address, 22))
+        except ConnectionRefusedError:
+            break
+        except Exception as inst:
+            print("inst", inst)
+            time.sleep(1)
+        else:
+            break
+
     return cntr
 
 
@@ -93,7 +113,9 @@ for i, line in enumerate(lines):
     if line.startswith("ADD"):
         files, dest = shlex.split(line[4:])
         try:
-            tar_output = subprocess.check_output(["tar", "-cf", "/tmp/lxf.tar", files])
+            tar_output = subprocess.check_output(
+                ["tar", "-cf", "/tmp/lxf.tar", files]
+            )
         except subprocess.CalledProcessError:
             raise Exception("ADD File does not exist", line)
         md5sum_out = subprocess.check_output(["md5sum", "/tmp/lxf.tar"])
@@ -112,10 +134,12 @@ for i, line in enumerate(lines):
                 print("No snapshot found")
                 snapshot_name = None
             cntr = create_container(name, snapshot_name)
-        if line.startswith("ADD"):  # todo move to before key is generated
+        if line.startswith("ADD"):
             cntr.execute(['mkdir', dest])
             target = cntr.name + "//tmp/lxf.tar"
-            push_output = subprocess.check_output(["lxc", "file", "push", "/tmp/lxf.tar", target])
+            push_output = subprocess.check_output(
+                ["lxc", "file", "push", "/tmp/lxf.tar", target]
+            )
             cntr.execute(['tar', '-xf', '/tmp/lxf.tar', '-C', dest])
             cntr.execute(['rm', '/tmp/lxf.tar'])
         else:
