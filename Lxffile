@@ -3,3 +3,4 @@ apt-get update
 /bin/bash -c "echo \"a1\" > a2"
 ADD fakesource /moo/
 /bin/bash -c "echo \"b3\" > b4"
+/bin/bash -c "echo \"testing2\" > testing2"

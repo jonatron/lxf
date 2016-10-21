@@ -1,0 +1,1 @@
+lxc list

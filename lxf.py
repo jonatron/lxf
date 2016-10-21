@@ -33,7 +33,6 @@ def create_container(name, snapshot_name=None):
     else:
         print("Container already exists...")
         return cntr
-    print("snapshot_name cc", repr(snapshot_name))
     if snapshot_name:
         config = {
             "name": name,
@@ -108,6 +107,8 @@ last_key = None
 snapshot_name = None
 for i, line in enumerate(lines):
     if i == 0:
+        continue
+    if line == "" or line.startswith("#"):
         continue
     lines_up_to_here += line
     if line.startswith("ADD"):
